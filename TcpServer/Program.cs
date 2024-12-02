@@ -8,7 +8,7 @@ namespace TcpServer
     {
         static async Task Main(string[] args)
         {
-            ServerObject server = new ServerObject("127.0.0.1", 8080);
+            
         }
     }
 }
