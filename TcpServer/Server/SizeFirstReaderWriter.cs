@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TcpServer
+namespace TcpServer.Server
 {
     internal class SizeFirstReaderWriter
     {
@@ -21,11 +21,14 @@ namespace TcpServer
 
             return Encoding.UTF8.GetString(buffer);
         }
+
         public static async Task WriteAsync(NetworkStream stream, string message, CancellationToken token)
         {
             var bytesMessage = Encoding.UTF8.GetBytes(message);
             var size = BitConverter.GetBytes(bytesMessage.Length);
+            //Отправляем размер сообщения
             await stream.WriteAsync(size, token);
+            //Отправляем сообщение
             await stream.WriteAsync(bytesMessage, token);
         }
     }

@@ -5,19 +5,19 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TcpServer
+namespace TcpServer.Server
 {
     internal class ClientObject
     {
-        private TcpClient _client;
+        protected TcpClient _client;
         public TcpClient Client
         {
             get { return _client; }
         }
         public IRequestHandler RequestHandler { get; set; }
 
-        private ServerObject _server;
-        private NetworkStream _stream;
+        protected ServerObject _server;
+        protected NetworkStream _stream;
 
         public ClientObject(TcpClient client, IRequestHandler requestHandler, ServerObject server)
         {

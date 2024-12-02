@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TcpServer
+namespace TcpServer.Server
 {
     internal class ServerObject
     {
@@ -40,17 +40,22 @@ namespace TcpServer
                 var token = _cts.Token;
                 while (!token.IsCancellationRequested)
                 {
-                    var tcpClient = await _listener.AcceptTcpClientAsync();
-                    var client = new ClientObject(tcpClient, RequestHandler, this);
-                    _clients.Add(client);
-
-                    ClientAdded?.Invoke(tcpClient);
+                    var client = await AcceptClientAsync(token);
 
                     _ = Task.Run(() => client.ClientHandlerAsync(token), token);
                 }
             }
             catch (Exception) { throw; }
             finally { Disconnect(); }
+        }
+        protected virtual async Task<ClientObject> AcceptClientAsync(CancellationToken token)
+        {
+            var tcpClient = await _listener.AcceptTcpClientAsync(token);
+            var client = new ClientObject(tcpClient, RequestHandler, this);
+            _clients.Add(client);
+
+            ClientAdded?.Invoke(tcpClient);
+            return client;
         }
         public void RemoveClient(ClientObject client)
         {
