@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,8 @@ namespace TcpServer.Server
         {
             get { return _client; }
         }
+        public EndPoint EndPoint { get; }
+
         public IRequestHandler RequestHandler { get; set; }
 
         protected ServerObject _server;
@@ -25,6 +28,7 @@ namespace TcpServer.Server
             _stream = client.GetStream();
             RequestHandler = requestHandler;
             _server = server;
+            EndPoint = client.Client.RemoteEndPoint;
         }
         public async Task ClientHandlerAsync(CancellationToken token)
         {
@@ -32,20 +36,24 @@ namespace TcpServer.Server
             {
                 while (!token.IsCancellationRequested)
                 {
-                    var request = await SizeFirstReaderWriter.ReadAsync(_stream, token);
+                    var request = await ReadAsync(token);
 
                     //Обрабатываем сообщение и при необходимости отправляем ответ
                     var response = RequestHandler.Handler(request);
                     if (response != null)
                     {
-                        _ = Task.Run(() => Write(response, token), token);
+                        _ = Task.Run(() => WriteAsync(response, token), token);
                     }
                 }
             }
             catch (Exception) { throw; }
             finally { _server.RemoveClient(this); }
         }
-        public async Task Write(string message, CancellationToken token)
+        public async Task<string> ReadAsync(CancellationToken token)
+        {
+            return await SizeFirstReaderWriter.ReadAsync(_stream, token);
+        }
+        public async Task WriteAsync(string message, CancellationToken token)
         {
             await SizeFirstReaderWriter.WriteAsync(_stream, message, token);
         }
