@@ -11,61 +11,68 @@ namespace TcpServer
     internal class ServerObject
     {
         public IPEndPoint EndPoint { get; set; }
-        public int Port { get; set; }
-        public bool Active { get; set; }
+        public IRequestHandler RequestHandler { get; set; }
 
-        private Socket _listener; // представляет объект, который ведет прослушивание
-        private volatile CancellationTokenSource _cts; // токен отменты, с помощью него будут останавливаться потоки при остановке сервера
+        public event Action ServerStarted;
+        public event Action<TcpClient> ClientAdded;
+        public event Action<TcpClient> ClientDisconnected;
+        public event Action ServerStopped;
+
+        protected TcpListener _listener;
+        protected CancellationTokenSource _cts;
+        protected List<ClientObject> _clients;
 
         public ServerObject(string ip, int port)
         {
-            Port = port;
-            EndPoint = new IPEndPoint(IPAddress.Parse(ip), Port);
-            _listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            EndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+            _listener = new TcpListener(EndPoint);
             _cts = new CancellationTokenSource();
+            _clients = new List<ClientObject>();
         }
-        public void Start()
+        public async Task ListenAsync()
         {
-            if (Active)
+            try
             {
-                Console.WriteLine("Server was started");
-                return;
-            }
-            _listener.Bind(EndPoint);
-            _listener.Listen(16);
-            Active = true;
+                _listener.Start();
 
-            while (Active || !_cts.Token.IsCancellationRequested)
-            {
-                try
+                ServerStarted?.Invoke();
+
+                var token = _cts.Token;
+                while (!token.IsCancellationRequested)
                 {
-                    Socket listenerAccept = _listener.Accept();
-                    if (listenerAccept != null)
-                    {
-                        Task.Run(
-                          () => ClientThread(listenerAccept),
-                          _cts.Token
-                        );
-                    }
+                    var tcpClient = await _listener.AcceptTcpClientAsync();
+                    var client = new ClientObject(tcpClient, RequestHandler, this);
+                    _clients.Add(client);
+
+                    ClientAdded?.Invoke(tcpClient);
+
+                    _ = Task.Run(() => client.ClientHandlerAsync(token), token);
                 }
-                catch { }
             }
+            catch (Exception) { throw; }
+            finally { Disconnect(); }
+        }
+        public void RemoveClient(ClientObject client)
+        {
+            _clients.Remove(client);
+            client.Close();
+
+            ClientDisconnected?.Invoke(client.Client);
         }
         public void Stop()
         {
-            if (!Active)
-            {
-                Console.WriteLine("Server was stopped");
-                return;
-            }
             _cts.Cancel();
-            _listener.Close();
-            Active = false;
-
         }
-        public void ClientThread(Socket client)
+        private void Disconnect()
         {
-            new Client(client);
+            foreach (var client in _clients)
+            {
+                client.Close();
+            }
+            _listener.Stop();
+            _clients.Clear();
+
+            ServerStopped?.Invoke();
         }
     }
 }
