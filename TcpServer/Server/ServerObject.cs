@@ -11,28 +11,32 @@ namespace TcpServer.Server
     internal class ServerObject
     {
         public IPEndPoint EndPoint { get; set; }
-        public IRequestHandler RequestHandler { get; set; }
+        public IRequestHandler? RequestHandler { get; set; }
 
         public event Action ServerStarted;
-        public event Action<TcpClient> ClientAdded;
-        public event Action<TcpClient> ClientDisconnected;
+        public event Action<ClientObject> ClientAdded;
+        public event Action<ClientObject> ClientDisconnected;
         public event Action ServerStopped;
 
         protected TcpListener _listener;
         protected CancellationTokenSource _cts;
         protected List<ClientObject> _clients;
 
-        public ServerObject(string ip, int port)
+        public ServerObject(IPAddress ip, int port)
         {
-            EndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+            EndPoint = new IPEndPoint(ip, port);
             _listener = new TcpListener(EndPoint);
             _cts = new CancellationTokenSource();
             _clients = new List<ClientObject>();
         }
+        public ServerObject(string ip, int port) : this(IPAddress.Parse(ip), port) {}
+
         public async Task ListenAsync()
         {
             try
             {
+                if (RequestHandler == null) throw new Exception("No request handler.");
+
                 _listener.Start();
 
                 ServerStarted?.Invoke();
@@ -54,7 +58,7 @@ namespace TcpServer.Server
             var client = new ClientObject(tcpClient, RequestHandler, this);
             _clients.Add(client);
 
-            ClientAdded?.Invoke(tcpClient);
+            ClientAdded?.Invoke(client);
             return client;
         }
         public void RemoveClient(ClientObject client)
@@ -62,7 +66,7 @@ namespace TcpServer.Server
             _clients.Remove(client);
             client.Close();
 
-            ClientDisconnected?.Invoke(client.Client);
+            ClientDisconnected?.Invoke(client);
         }
         public void Stop()
         {

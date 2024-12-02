@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,8 @@ namespace TcpServer.Server
         {
             get { return _client; }
         }
+        public EndPoint EndPoint { get; }
+
         public IRequestHandler RequestHandler { get; set; }
 
         protected ServerObject _server;
@@ -25,6 +28,7 @@ namespace TcpServer.Server
             _stream = client.GetStream();
             RequestHandler = requestHandler;
             _server = server;
+            EndPoint = client.Client.RemoteEndPoint;
         }
         public async Task ClientHandlerAsync(CancellationToken token)
         {
