@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TcpServer.Server;
 
-namespace TcpServer.PCСomponents
+namespace Sample.PCСomponents
 {
     internal class RequestHandler : IRequestHandler
     {

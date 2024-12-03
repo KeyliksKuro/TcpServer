@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace TcpServer.Server
 {
-    internal class SizeFirstReaderWriter
+    public class SizeFirstReaderWriter
     {
         public static async Task<string> ReadAsync(NetworkStream stream, CancellationToken token)
         {

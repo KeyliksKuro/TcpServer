@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace TcpServer.Server
 {
-    internal class ServerObject
+    public class ServerObject
     {
         public IPEndPoint EndPoint { get; set; }
         public IRequestHandler? RequestHandler { get; set; }

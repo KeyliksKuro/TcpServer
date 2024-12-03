@@ -1,22 +1,21 @@
 ﻿using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using TcpServer.Server;
+using Sample.PCСomponents;
 
-namespace TcpServer
+namespace Sample
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            ServerObject server = new ServerObject(IPAddress.Any, 8080);
+            ServerObject server = new ServerObject(IPAddress.Loopback, 8080);
             server.ServerStarted += () => Console.WriteLine("Сервер запущен.");
             server.ServerStopped += () => Console.WriteLine("Сервер остановлен.");
-            server.ClientAdded += 
+            server.ClientAdded +=
                 (ClientObject client) => Console.WriteLine($"Подключился клиент {client.EndPoint}.");
-            server.ClientDisconnected += 
+            server.ClientDisconnected +=
                 (ClientObject client) => Console.WriteLine($"Отключился клиент {client.EndPoint}.");
-            server.RequestHandler = new PCСomponents.RequestHandler();
+            server.RequestHandler = new RequestHandler();
 
             _ = Task.Run(server.ListenAsync);
             Console.ReadLine();
