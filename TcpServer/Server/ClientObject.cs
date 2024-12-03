@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace TcpServer.Server
 {
-    internal class ClientObject
+    public class ClientObject
     {
         protected TcpClient _client;
         public TcpClient Client
