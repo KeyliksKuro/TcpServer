@@ -12,6 +12,7 @@ namespace Sample.PCСomponents
         public string Handler(string request)
         {
             Console.WriteLine("Получен запрос на получение цены комплектующей.");
+            Console.WriteLine(request);
             Console.WriteLine("Цена отправлена.");
             return "Цена комплюктующей.";
         }

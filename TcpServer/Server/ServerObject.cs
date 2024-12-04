@@ -5,12 +5,13 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Http;
 
 namespace TcpServer.Server
 {
-    public class ServerObject
+    public class ServerObject : ITcpServer
     {
-        public IPEndPoint EndPoint { get; set; }
+        public IPEndPoint EndPoint { get; }
         public IRequestHandler? RequestHandler { get; set; }
 
         public event Action ServerStarted;
@@ -44,22 +45,28 @@ namespace TcpServer.Server
                 var token = _cts.Token;
                 while (!token.IsCancellationRequested)
                 {
-                    var client = await AcceptClientAsync(token);
+                    var client = await AddClientAsync(token);
 
-                    _ = Task.Run(() => client.ClientHandlerAsync(token), token);
+                    _ = Task.Run(() => client?.ClientHandlerAsync(token), token);
                 }
             }
             catch (Exception) { throw; }
             finally { Disconnect(); }
         }
-        protected virtual async Task<ClientObject> AcceptClientAsync(CancellationToken token)
+        public async Task<TcpClient> AcceptClientAsync(CancellationToken token)
         {
-            var tcpClient = await _listener.AcceptTcpClientAsync(token);
-            var client = new ClientObject(tcpClient, RequestHandler, this);
-            _clients.Add(client);
+            return await _listener.AcceptTcpClientAsync(token);
+        }
+        public async Task<ClientObject> AddClientAsync(CancellationToken token)
+        {
+            var tcpClient = await AcceptClientAsync(token);
+            if (tcpClient == null) return null!;
 
-            ClientAdded?.Invoke(client);
-            return client;
+            var clientObject = new ClientObject(tcpClient, RequestHandler, this);
+            _clients.Add(clientObject);
+
+            ClientAdded?.Invoke(clientObject);
+            return clientObject;
         }
         public void RemoveClient(ClientObject client)
         {
